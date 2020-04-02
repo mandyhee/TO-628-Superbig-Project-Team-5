@@ -1,6 +1,6 @@
 # TO-628-Superbig-Project-Team-5
 
-This repo is for TO 628 Advanced Big Data Analytics Team 5 group project.
+This repo is for our coursework at University of Michigan in TO 628 Advanced Big Data Analytics Team 5 group project.
 
 ### Project Descriptions
 
