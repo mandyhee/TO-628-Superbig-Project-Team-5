@@ -2,12 +2,12 @@
 
 This repo is for TO 628 Advanced Big Data Analytics Team 5 group project.
 
-## Project Descriptions
+### Project Descriptions
 
-## Dataset
+### Dataset
 
 
-## Collaborators:
+### Collaborators:
 
-Jen Hung (jenhung@umich.edu) 
+Jen Hung (jenhung@umich.edu)   
 Meng-Ni Ho (mandyho@umich.edu)
