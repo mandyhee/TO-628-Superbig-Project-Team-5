@@ -1,0 +1,19 @@
+---
+title: "Group5_project"
+author: "Names"
+date: "4/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Load data
+```{r}
+library(tidyverse)
+library(gmodels)
+addata<-read.csv('advertising.csv')
+
+```
+
