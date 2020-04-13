@@ -14,6 +14,18 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(gmodels)
 addata<-read.csv('advertising.csv')
+addata %>% glimpse()
+str(addata)
+
+#separate date and time
+addata_1<-addata
+addata_1=addata_1 %>% separate(Timestamp,c('date','time'),sep =' ' ) %>% separate(time,c('hour','minute','second'),sep=':')
+addata_1=addata_1 %>% mutate(Time_of_day=case_when(hour<12~'Morning',hour<18~'Afternoon',TRUE~'Evening'))
+str(addata_1)
+
+addata_1$Clicked.on.Ad<-as.factor(addata_1$Clicked.on.Ad)
+addata_1$Time_of_day<-as.factor(addata_1$Time_of_day)
+str(addata_1)
 
 ```
 
