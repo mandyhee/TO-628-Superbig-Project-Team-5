@@ -1,6 +1,6 @@
 ---
 title: "Grou5_project"
-author: "Shraddha Ramesh"
+author: "Add names here, Shraddha Ramesh"
 date: "4/14/2020"
 output: html_document
 ---
@@ -13,16 +13,29 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(naniar)
+library(C50)
 faults <- read.csv("faults_recode.csv")
 faults %>% glimpse()
-summary(faults) #No NAs
+faults %>% miss_var_summary() #No NAs
+
+#Type of steel is merged into a single column and mase to factor
+faults$SteelType<-ifelse(faults$TypeOfSteel_A300==1,'A300','A400')
+faults$SteelType<-as.factor(faults$SteelType)
 
 ```
 
 ## Logistic Regression
 
 ```{r}
-#Logit model
+#Logit model for Pastry Faults
+
+faults_logit <- faults[c(1:11,14:26,36,35,28)]
+faults_logit$label<- NULL
+#faults_logit$Pastry<- as.factor(ifelse(faults_logit$Pastry==1,'Pastry','Not Pastry'))
+faults_logit %>% glimpse()
+fault_logit_model <- glm(Pastry~X_Minimum + X_Maximum + Y_Minimum + Y_Maximum +Pixels_Areas + X_Perimeter + Y_Perimeter + Sum_of_Luminosity + Minimum_of_Luminosity + Maximum_of_Luminosity + Length_of_Conveyer + Steel_Plate_Thickness + Edges_Index+ Square_Index + Edges_Y_Index + LogOfAreas, data = faults_logit, family = 'binomial')
+summary(fault_logit_model)
+
 
 ```
 
