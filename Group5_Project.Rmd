@@ -1,0 +1,28 @@
+---
+title: "Grou5_project"
+author: "Shraddha Ramesh"
+date: "4/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load data + Library
+```{r}
+library(tidyverse)
+library(naniar)
+faults <- read.csv("faults_recode.csv")
+faults %>% glimpse()
+summary(faults) #No NAs
+
+```
+
+## Logistic Regression
+
+```{r}
+#Logit model
+
+```
+
