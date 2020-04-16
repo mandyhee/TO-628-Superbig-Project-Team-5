@@ -1,7 +1,7 @@
 ---
-title: "Grou5_project"
-author: "Add names here, Shraddha Ramesh"
-date: "4/14/2020"
+title: "TO 628 Group 5 Project: Faulty Steel Plates Prediction"
+author: "Add names here, Shraddha Ramesh, Meng-Ni Ho"
+date: 'Analyses completed: `r format(Sys.Date(), "%Y-%m-%d")`'
 output: html_document
 ---
 
@@ -9,12 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Project Description
+
+Dataset resource: [from kaggle](https://www.kaggle.com/uciml/faulty-steel-plates?fbclid=IwAR1_GKUHnj6D0haU8UuIj24jjeXzXtkwghQAI-y9y_FcXLrOnOIg3W1Kwd8)
+
+
+
 ## Load data + Library
-```{r}
+```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(naniar)
 library(C50)
+library(e1071) 
+library(caret)
 faults <- read.csv("faults_recode.csv")
+
+```
+
+## Data Cleaning
+```{r}
 faults %>% glimpse()
 faults %>% miss_var_summary() #No NAs
 
@@ -22,7 +35,25 @@ faults %>% miss_var_summary() #No NAs
 faults$SteelType<-ifelse(faults$TypeOfSteel_A300==1,'A300','A400')
 faults$SteelType<-as.factor(faults$SteelType)
 
+# select relevant variables
+# outcome: sdata$label
+new.faults = faults %>% select(-c(Pastry, Z_Scratch, K_Scatch, Stains, Dirtiness, Bumps, Other_Faults, 
+                            TypeOfSteel_A300, TypeOfSteel_A400))
+new.faults$label = as.factor(new.faults$label)
 ```
+
+## Split training and testing set: ratio 7:3
+training set: N = 1358
+testing set: N = 583
+```{r}
+# split train and test dataset
+set.seed(40)
+train_ind <- sample(seq_len(nrow(new.faults)), size = as.integer(dim(new.faults)[1]*0.7))
+
+train <- new.faults[train_ind,]
+test <- new.faults[-train_ind,]
+```
+
 
 ## Logistic Regression
 
@@ -38,4 +69,48 @@ summary(fault_logit_model)
 
 
 ```
+
+
+## Support Vector Machine: Linear Kernal
+```{r}
+# start training using linear kernal
+system.time({
+  svm.linear <- svm(formula = label ~ ., 
+                 data = train, 
+                 type = 'C-classification', 
+                 kernel = 'linear') 
+})
+
+# predict test result
+svm.linear.pred <- predict(svm.linear, newdata = test %>% select(-label)) 
+
+# confusion matrix
+cm.svm.linear <- confusionMatrix(svm.linear.pred, as.factor(test[, "label"]))
+accuracy.svm.linear <- round(as.numeric(cm.svm.linear$overall[1])*100, digits = 2)
+pred.table.svm.linear <- cm.svm.linear$table
+print(pred.table.svm.linear)
+```
+
+
+## Support Vector Machine: Radial Kernal
+```{r}
+system.time({
+  svm.radial <- svm(formula = label ~ ., 
+                 data = train, 
+                 type = 'C-classification', 
+                 kernel = 'radial') 
+})
+
+# predict test result
+svm.radial.pred <- predict(svm.radial, newdata = test %>% select(-label)) 
+
+# confusion matrix
+cm.svm.radial <- confusionMatrix(svm.radial.pred, as.factor(test[, "label"]))
+accuracy.svm.radial <- round(as.numeric(cm.svm.radial$overall[1])*100, digits = 2)
+pred.table.svm.radial <- cm.svm.radial$table
+print(pred.table.svm.radial)
+```
+
+
+
 
