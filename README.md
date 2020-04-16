@@ -22,6 +22,11 @@ We will be training model with five different machine learning method: logistic 
 ### Dataset Ressource
 https://www.kaggle.com/uciml/faulty-steel-plates?fbclid=IwAR1_GKUHnj6D0haU8UuIj24jjeXzXtkwghQAI-y9y_FcXLrOnOIg3W1Kwd8
 
+### File description
+* Cleaned data: `faults_recode.csv`
+* Rmarkdown (contain all five training methods): `Group5_Project.rmd`
+* HTML output (contain all five training methods): `Group5_Project.html`
+* R scripts for each training method: `svm.R`
 
 ### Collaborators:
 
