@@ -1,6 +1,6 @@
 ---
 title: "TO 628 Group 5 Project: Faulty Steel Plates Prediction"
-author: "Add names here, Shraddha Ramesh, Meng-Ni Ho, Jen Hung"
+author: "Nancy Kim, Stephanie Chan, Shraddha Ramesh, Meng-Ni Ho, Jen Hung"
 date: 'Analyses completed: `r format(Sys.Date(), "%Y-%m-%d")`'
 output: html_document
 ---
@@ -11,34 +11,65 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Project Description
 
-Dataset resource: [from kaggle](https://www.kaggle.com/uciml/faulty-steel-plates?fbclid=IwAR1_GKUHnj6D0haU8UuIj24jjeXzXtkwghQAI-y9y_FcXLrOnOIg3W1Kwd8)
+In this project, we would like to utilize machine learning techniques to classify types of surface defects in stainless steel plates. There are seven types of defects in the dataset:  
+
+* Pastry
+* Z_Scratch
+* K_Scatch
+* Stains
+* Dirtiness
+* Bumps
+* Other_Faults  
+
+And there are 34 features in the dataset which are used as parameters in the model:
+X_Minimum, X_Maximum, Y_Minimum, Y_Maximum, Pixels_Areas, X_Perimeter, Y_Perimeter, SumofLuminosity, MinimumofLuminosity, MaximumofLuminosity, LengthofConveyer, TypeOfSteel_A300, TypeOfSteel_A400, SteelPlateThickness, Edges_Index, Empty_Index, Square_Index, OutsideXIndex, EdgesXIndex, EdgesYIndex, OutsideGlobalIndex, LogOfAreas, LogXIndex, LogYIndex, Orientation_Index, Luminosity_Index, SigmoidOfAreas
+
+#### Dataset resource: [here](https://www.kaggle.com/uciml/faulty-steel-plates?fbclid=IwAR1_GKUHnj6D0haU8UuIj24jjeXzXtkwghQAI-y9y_FcXLrOnOIg3W1Kwd8)  
 
 
-
-## Load data + Library
+### I. Load data + Library
 ```{r, warning=FALSE, message=FALSE}
-library(tidyverse)
-library(naniar)
-library(C50)
-library(e1071) 
-library(caret)
-library(class)
-library(gmodels)
+library(tidyverse, quietly = T)
+library(naniar, quietly = T)
+library(C50, quietly = T)
+library(e1071, quietly = T) 
+library(caret, quietly = T)
+library(class, quietly = T)
+library(gmodels, quietly = T)
 faults <- read.csv("faults_recode.csv")
 
 ```
 
-## Data Cleaning
+### II. Data Cleaning
+First, let's take a look at the data:
+We can see that are total 1941 observations in the data, and total 36 variables, including the indicator for seven types of defects: `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults`. The variable `label` is the combined results for the above seven indicators.
 ```{r}
-
 faults %>% glimpse()
+```
+
+Checking for missing values: 
+```{r}
 faults %>% miss_var_summary() #No NAs
 #any(is.na(faults))
+```
+There are no missing values in this dataset. 
 
+
+Now, let's take a look at the distribution of each defects: 
+```{r}
+table(faults$label)
+```
+
+Recoding of type of steel, type of steel is either "A300" (`TypeOfSteel_A300`) or "A400" (`TypeOfSteel_A400`), in here, we combine these two variables to an indicator `SteelType`, indicates 1 for A300, 0 for A400. 
+```{r}
 #Type of steel is merged into a single column and mase to factor
 faults$SteelType<-ifelse(faults$TypeOfSteel_A300==1,1,0)
 #faults$SteelType<-as.factor(faults$SteelType)
 
+```
+
+Select the variables used for training, note that `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults` are the seven types of defects and are combined in the variables `label`, which will be set as our training outcome. Therefore, we removed the seven types of detects in the training data.
+```{r}
 # select relevant variables
 # outcome: sdata$label
 new.faults = faults %>% select(-c(Pastry, Z_Scratch, K_Scatch, Stains, Dirtiness, Bumps, Other_Faults, 
@@ -46,8 +77,10 @@ new.faults = faults %>% select(-c(Pastry, Z_Scratch, K_Scatch, Stains, Dirtiness
 new.faults$label = as.factor(new.faults$label)
 ```
 
-## Split training and testing set: ratio 7:3
-training set: N = 1358
+`new.faults` is our final cleaned data that will be used for machine learning training.
+
+### III. Split training and testing set: ratio 7:3
+training set: N = 1358   
 testing set: N = 583
 ```{r}
 # split train and test dataset
@@ -59,7 +92,7 @@ test <- new.faults[-train_ind,]
 ```
 
 
-## Logistic Regression
+### IV. Model 1: Logistic Regression
 
 ```{r}
 #Logit model for Pastry Faults
@@ -75,7 +108,8 @@ summary(fault_logit_model)
 ```
 
 
-## Support Vector Machine: Linear Kernal
+### V. Model 2: Support Vector Machine: 
+#### 1. Linear Kernal
 ```{r}
 # start training using linear kernal
 system.time({
@@ -95,8 +129,9 @@ pred.table.svm.linear <- cm.svm.linear$table
 print(pred.table.svm.linear)
 ```
 
+Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%.
 
-## Support Vector Machine: Radial Kernal
+#### 2. Radial Kernal
 ```{r}
 system.time({
   svm.radial <- svm(formula = label ~ ., 
@@ -115,7 +150,9 @@ pred.table.svm.radial <- cm.svm.radial$table
 print(pred.table.svm.radial)
 ```
 
-## k-Nearest-Neighbors (KNN) 
+Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%.
+
+### VI. Model 3: k-Nearest-Neighbors (KNN) 
 ```{r}
 # seperate the variables and labels for train and test dataset
 
@@ -129,11 +166,6 @@ test_KNN <- test[,-26]
 standardized.train_KNN <- scale(train_KNN[,])
 standardized.test_KNN <- scale(test_KNN[,])
 
-KNN_pred <- knn(train = standardized.train_KNN, test = standardized.test_KNN, cl = train_label, k=8 )
-
-# Accuracy
-mean(test_label== KNN_pred)
-
 # find the best k-value
 accuracy.rate = NULL
 for(i in 1:20){
@@ -142,6 +174,72 @@ for(i in 1:20){
 }
 print(accuracy.rate)
 
+# use the best k to train
+system.time({
+  KNN_pred <- knn(train = standardized.train_KNN, test = standardized.test_KNN, cl = train_label, k=8 )
+})
+
+# Accuracy
+accuracy.knn = round(mean(test_label== KNN_pred)*100, digits = 2)
+
+
+```
+
+Results: Accuracy of using kNN with k = 8 is `r accuracy.knn`
+
+### VII. Model 4: Decision Tree
+#### 1. Use default one number of boosting trial
+```{r}
+# build decision tree model 
+decision.tree <- C5.0(train[,-26], train$label)
+#str(decision.tree)
+#plot(decision.tree)
+
+#predict fault types 
+ds.pred <- predict(decision.tree,test[,-26])
+table(ds.pred)
+table(test$label)
+
+#cross tabulation of predicted vs actual values 
+CrossTable(test$label, ds.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual faults', 'predicted faults'))
+
+cm.ds.tree <- confusionMatrix(ds.pred, as.factor(test[, "label"]))
+accuracy.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[1])*100, digits = 2)
+pred.table.ds.tree <- cm.ds.tree$table
+print(pred.table.ds.tree)
+
+```
+
+Results: Accuracy of using decision tree with one boosting trial is `r accuracy.cm.ds.tree`
+
+
+#### 2. Setting boosting trials to 12
+```{r}
+#improve accuracy or reliability (give cost matrix dpending on if false positive or false negative is better)
+ds.tree.boost12 <- C5.0(train[,-26], train$label, trials = 12)
+print(ds.tree.boost12)
+
+# summary(ds.tree.boost12)
+ds.tree.boost12.pred <- predict(ds.tree.boost12, test[,-26])
+
+CrossTable(test$label, ds.tree.boost12.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual label', 'label predictions'))
+
+cm.ds.tree.12 <- confusionMatrix(ds.tree.boost12.pred, as.factor(test[, "label"]))
+accuracy.cm.ds.tree.12 <- round(as.numeric(cm.ds.tree.12$overall[1])*100, digits = 2)
+pred.table.ds.tree.12 <- cm.ds.tree.12$table
+print(pred.table.ds.tree.12)
+```
+
+Results: Accuracy of using decision tree with 12 boosting trials is `r accuracy.cm.ds.tree.12`
+
+
+### VIII. Model 5: Artifical Neural Network 
+
+
+### IX. Comparing Accuracy
+The below tables show the accuracy of the above five methods:
+```{r}
 
 ```
 
