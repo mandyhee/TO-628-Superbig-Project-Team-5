@@ -36,6 +36,7 @@ library(e1071, quietly = T)
 library(caret, quietly = T)
 library(class, quietly = T)
 library(gmodels, quietly = T)
+library(neuralnet, quietly = T)
 faults <- read.csv("faults_recode.csv")
 
 ```
@@ -234,8 +235,50 @@ print(pred.table.ds.tree.12)
 Results: Accuracy of using decision tree with 12 boosting trials is `r accuracy.cm.ds.tree.12`
 
 
-### VIII. Model 5: Artifical Neural Network 
+### VIII. Model 5: Artifical Neural Network (ANN) 
 
+```{r}
+# change the data type for label to numeric type
+train_ANN <- train
+train_ANN$label_num = ifelse(train_ANN$label =="Pastry", 1,
+ifelse(train_ANN$label == "Z_Scratch", 2,
+ifelse(train_ANN$label == "K_Scatch", 3,
+ifelse(train_ANN$label == "Stains", 4,
+ifelse(train_ANN$label == "Dirtiness", 5,
+ifelse(train_ANN$label == "Bumps", 6, 
+ifelse(train_ANN$label == "Other_Faults", 7, NA)))))))
+
+test_ANN <- test
+test_ANN$label_num = ifelse(test_ANN$label =="Pastry", 1,
+ifelse(test_ANN$label == "Z_Scratch", 2,
+ifelse(test_ANN$label == "K_Scatch", 3,
+ifelse(test_ANN$label == "Stains", 4,
+ifelse(test_ANN$label == "Dirtiness", 5,
+ifelse(test_ANN$label == "Bumps", 6, 
+ifelse(test_ANN$label == "Other_Faults", 7, NA)))))))
+
+train_ANN <- train_ANN[,-26]
+test_ANN <- test_ANN[,-26]
+
+
+#do the z-Score Standardization for dataset
+standardized.train_ANN <- scale(train_ANN[,])
+standardized.test_ANN <- scale(test_ANN[,])
+
+# ANN modeling
+
+ANN_model <- neuralnet(formula = label_num ~ .,data = standardized.train_ANN, hidden = 2)
+plot(ANN_model)
+
+# obtain model results
+test_results <- compute(ANN_model, standardized.test_ANN[,1:26])
+# obtain predicted 
+predicted_label <- test_results$net.result
+# examine the correlation between predicted and actual values
+cor(predicted_label, test_ANN$label_num)
+
+```
+Results: Accuracy of using ANN with 2 layers is `r cor(predicted_label, test_ANN$label_num)`
 
 ### IX. Comparing Accuracy
 The below tables show the accuracy of the above five methods:
