@@ -433,5 +433,15 @@ print(result.table)
 
 
 ### VII. Application & Conclusion
+Our dataset and model together answer the question, what kind of defect does a steel plate has, which is simple, but has a lot of business implications. Steel is mostly used in construction, "accounting for more than 50% of world steel demand". [2] To reduce risk for safety, environmental impact, and economic loss, fault detection becomes really important in the manufacutring processes. In the manufacturing industry this is called "Fault Diagnosis (FD)" [1] and "has a major importance to enhance the quality of manufacutring and to lessen the cost of product testing." [1] For this project, the team developed several ML models that would help detect the types of faults as early as possible and prevent serious issues from occurring. 
 
+The seven types of steel faults that the team analyzed in this dataset are considered the most common defect in steel plates. The team developed five FD models including logistic regression, ANN, KNN, SVM, and decision tree (with and without boosting) and compared these using accuracy generated through testing with the test dataset. Among these five models, the decision tree model with `r best_t` boosting trials demonstrates the most accuracy (`r accuracy.cm.ds.tree`%), outperforming all other models all of which showed accuracy of around 70%.  Looking at the summary of attribute usage for our decision tree model, we also find that the top four fault characteristics of a steel plate with 100% attribute usage are thickness of steel plate, outside x index, log x index, and log of area. 
+
+The decision tree model with boosting trials that helps identify the types of defects a steel plate has can provide a useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, "The predictions that our model provides using machine learning techniques will be able to provide timely diagnosis for faults t
+
+
+###Reference
+[1] https://www.researchgate.net/publication/265124971_Steel_Plates_Faults_Diagnosis_with_Data_Mining_Models
+[2] https://www.worldsteel.org/steel-by-topic/steel-markets/buildings-and-infrastructure.html
+[3] https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=923309
 
