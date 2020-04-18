@@ -599,7 +599,7 @@ system.time({
 ## final  value 1069.278040 
 ## stopped after 100 iterations</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.654   0.011   0.698</code></pre>
+##   0.610   0.006   0.625</code></pre>
 <pre class="r"><code># summary(multinom_1)
 
 # to get pvalues
@@ -730,7 +730,7 @@ system.time({
                  kernel = 'linear') 
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.304   0.008   0.329</code></pre>
+##   0.275   0.005   0.286</code></pre>
 <pre class="r"><code># predict test result
 svm.linear.pred &lt;- predict(svm.linear, newdata = test %&gt;% dplyr::select(-label, label_num)) 
 
@@ -759,7 +759,7 @@ print(pred.table.svm.linear)</code></pre>
                  kernel = 'radial') 
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.280   0.005   0.287</code></pre>
+##   0.273   0.005   0.280</code></pre>
 <pre class="r"><code># predict test result
 svm.radial.pred &lt;- predict(svm.radial, newdata = test %&gt;% dplyr::select(-label, -label_num)) 
 
@@ -820,7 +820,7 @@ system.time({
   KNN_pred &lt;- knn(train = standardized.train_KNN, test = standardized.test_KNN, cl = train_label, k= best_k)
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.024   0.000   0.024</code></pre>
+##   0.024   0.001   0.024</code></pre>
 <pre class="r"><code># Accuracy
 # accuracy.knn = round(mean(test_label== KNN_pred)*100, digits = 2)
 
@@ -872,7 +872,7 @@ system.time({
   ds.tree.boost &lt;- C5.0(train %&gt;% dplyr::select(-label, -label_num), train$label, trials = best_t)
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.412   0.002   0.417</code></pre>
+##   0.419   0.004   0.426</code></pre>
 <pre class="r"><code>print(ds.tree.boost)</code></pre>
 <pre><code>## 
 ## Call:
@@ -962,7 +962,7 @@ system.time({
                        hidden = 4)  
 })</code></pre>
 <pre><code>##    user  system elapsed 
-## 210.224  59.583 273.617</code></pre>
+## 209.258  58.403 270.394</code></pre>
 <pre class="r"><code># plot(ANN_model)
 
 # obtain model results
@@ -1009,9 +1009,9 @@ print(result.table)</code></pre>
 <h3>VII. Application &amp; Conclusion</h3>
 <pre><code>Our dataset and model together answer the question, what kind of defect does a steel plate has, which is simple, but has a lot of business implications. Steel is mostly used in construction, &quot;accounting for more than 50% of world steel demand&quot;. [2] To reduce risk for safety, environmental impact, and economic loss, fault detection becomes really important in the manufacutring processes. In the manufacturing industry this is called &quot;Fault Diagnosis (FD)&quot; [1] and &quot;has a major importance to enhance the quality of manufacutring and to lessen the cost of product testing.&quot; [1] For this project, the team developed several ML models that would help detect the types of faults as early as possible and prevent serious issues from occurring. 
 
-The seven types of steel faults that the team analyzed in this dataset are considered the most common defect in steel plates. The team developed five FD models including logistic regression, ANN, KNN, SVM, and decision tree (with and without boosting) and compared these using accuracy generated through testing with the test dataset. Among these five models, the decision tree model with 6 boosting trials demonstrates the most accuracy (81.82%), outperforming all other models all of which showed accuracy of around 70%.  Looking at the summary of attribute usage for our decision tree model, we also find that the top four fault characteristics of a steel plate with 100% attribute usage are thickness of steel plate, outside x index, log x index, and log of area. 
+The seven types of steel faults that the team analyzed in this dataset are considered the most common defects in steel plates. The team developed five FD models including logistic regression, ANN, KNN, SVM, and decision tree (with and without boosting). The team then compared these using accuracy generated through testing with our test dataset. Among these five models, the decision tree model with 6 boosting trials demonstrates the most accuracy of (81.82%), outperforming all other models all of which showed accuracy of around 70%.  Looking at the summary of attribute usage for our decision tree model, we also find that the top four fault characteristics of a steel plate with 100% attribute usage are thickness of steel plate, outside x index, log x index, and log of area. 
 
-The decision tree model with boosting trials that helps identify the types of defects a steel plate has can provide a useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, &quot;during manufacturing downtimes, most of the time spent is on localization of the fault rather than carrying out the actual remediation, as fault diagnosis is the most challenging phase of machine repairs.&quot; [3] The predictions of our model generated machine learning techniques will be able to provide timely diagnosis for faults and help keep the manufacturers stay competitive by reducing machine downtimes, which in turn increase production speed and lower costs. </code></pre>
+The decision tree model with boosting trials the team developed and selected to be the best among the models tested can provide useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, &quot;during manufacturing downtimes, most of the time spent is on localization of the fault rather than carrying out the actual remediation, as fault diagnosis is the most challenging phase of machine repairs.&quot; [3] The predictions of our model generated through machine learning techniques will be able to provide timely diagnosis for faults and help keep the manufacturers stay competitive by reducing machine downtimes, which in turn increase production speed and lower costs. </code></pre>
 <p>###Reference</p>
 <pre><code>[1] https://www.researchgate.net/publication/265124971_Steel_Plates_Faults_Diagnosis_with_Data_Mining_Models
 [2] https://www.worldsteel.org/steel-by-topic/steel-markets/buildings-and-infrastructure.html
