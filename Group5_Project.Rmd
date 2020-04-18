@@ -40,11 +40,13 @@ library(caret, quietly = T)
 library(class, quietly = T)
 library(gmodels, quietly = T)
 library(neuralnet, quietly = T)
+library(nnet, quietly = T)
+library(stargazer, quietly = T)
 faults <- read.csv("faults_recode.csv")
 
 ```
 
-### III. Data Cleaning
+### III. Data Cleaning and Exploration
 First, let's take a look at the data:
 We can see that are total 1941 observations in the data, and total 36 variables, including the indicator for seven types of defects: `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults`. The variable `label` is the combined results for the above seven indicators.
 ```{r}
@@ -59,11 +61,12 @@ faults %>% miss_var_summary() #No NAs
 There are no missing values in this dataset. 
 
 
-Now, let's take a look at the distribution of each defects: 
+Now, let's take a look at the distribution of each defects, we can see that most defects fall in `Bumps`, `K_Scatch` and `Other_Faults`.
 ```{r}
 table(faults$label)
-ggplot(data = faults, aes(label)) +
-  geom_bar()
+ggplot(data = faults, aes(label, fill = label)) +
+  geom_bar() +
+  ggtitle("Distribution of seven defects (N = 1941)")
 ```
 
 Create another variable `label_num`, indicate numeric values for seven types of defects.
@@ -75,6 +78,39 @@ ifelse(faults$label == "Stains", 4,
 ifelse(faults$label == "Dirtiness", 5,
 ifelse(faults$label == "Bumps", 6, 
 ifelse(faults$label == "Other_Faults", 7, NA)))))))
+```
+
+Below are the box-whisker plots showing distribution of some of our training parameters:
+```{r, out.width=c('50%', '50%')}
+boxplot(faults$X_Minimum, faults$X_Maximum,
+        horizontal = TRUE,
+        main = "Boxplot for X_Minimum, X_Maximum",
+        names = c("X_Min", "X_Max"),
+        col = c("orange","green"),
+        las = 2,
+        notch = TRUE)
+boxplot(faults$Y_Minimum, faults$Y_Maximum,
+        horizontal = TRUE,
+        main = "Boxplot for Y_Minimum, Y_Maximum",
+        names = c("Y_Min", "Y_Max"),
+        col = c("orange","green"),
+        las = 2,
+        notch = TRUE)
+boxplot(faults$Minimum_of_Luminosity, faults$Maximum_of_Luminosity,
+        horizontal = TRUE,
+        main = "Boxplot for Luminosity",
+        names = c("Min", "Max"),
+        col = c("orange","green"),
+        las = 2,
+        notch = TRUE)
+boxplot(faults$Edges_Index, faults$Empty_Index, faults$Square_Index, 
+        horizontal = TRUE,
+        main = "Boxplot for Indicies",
+        at = c(1,3,5),
+        names = c("Edges", "Empty", "Square"),
+        col = c("orange","green", "purple"),
+        las = 3,
+        notch = TRUE)
 ```
 
 
@@ -108,22 +144,57 @@ train <- new.faults[train_ind,]
 test <- new.faults[-train_ind,]
 ```
 
+Lets take a look at the distribution of the seven defects in training and testing dataset:
+```{r, out.width=c('50%', '50%')}
+ggplot(data = train, aes(label, fill = label)) +
+  geom_bar() +
+  ggtitle("Distribution of seven defects in training set (N = 1358)")
+
+ggplot(data = test, aes(label, fill = label)) +
+  geom_bar() +
+  ggtitle("Distribution of seven defects in testing set (N = 583)")
+```
+
+
 
 ### V. Model training and testing
-#### Model 1: Logistic Regression
-
+#### Model 1: Multinomial Logistic Regression
+Since we have seven types of detects as our outcome, we use multinomial logistic regression instead binomial logistic regression to train our model.
 ```{r}
-#Logit model for Pastry Faults
+#faults %>% group_by(label) %>% summarise(n=n(),prop=n/nrow(faults))
+#faults_logit <- faults[c(1:11,14:27,36,35)]
+#set.seed(40)
+#train_set =sample(seq_len(nrow(faults_logit)), size = as.integer(dim(faults_logit)[1]*0.7)) 
+#fault_train = faults_logit[train_set,]
+#fault_test = faults_logit[-train_set,]
 
-faults_logit <- faults[c(1:11,14:26,36,35,28)]
-faults_logit$label<- NULL
-#faults_logit$Pastry<- as.factor(ifelse(faults_logit$Pastry==1,'Pastry','Not Pastry'))
-faults_logit %>% glimpse()
-fault_logit_model <- glm(Pastry~X_Minimum + X_Maximum + Y_Minimum + Y_Maximum +Pixels_Areas + X_Perimeter + Y_Perimeter + Sum_of_Luminosity + Minimum_of_Luminosity + Maximum_of_Luminosity + Length_of_Conveyer + Steel_Plate_Thickness + Edges_Index+ Square_Index + Edges_Y_Index + LogOfAreas, data = faults_logit, family = 'binomial')
-summary(fault_logit_model)
+#Proportion of faults in train and test set
+#fault_train %>% group_by(label) %>% summarise(n=n(),prop=n/nrow(fault_train))
+#fault_test %>% group_by(label) %>% summarise(n=n(),prop=n/nrow(fault_test))
 
+# NNET-> Multinom
+system.time({
+  multinom_1<- multinom(as.factor(label) ~.,data= train %>% select(-c(label_num)))
+})
+# summary(multinom_1)
 
+# to get pvalues
+stargazer(multinom_1, type="text", out="multi1.txt")
+
+# predict test result
+multinom_1_pred<-predict(multinom_1, test %>% select(-c(label_num, label)))
+# CrossTable(multinom_1_pred, test$label)
+#Accuracy
+# sum(multinom_1_pred==fault_test$label)/nrow(fault_test)*100
+
+# confusion matrix
+cm.multinom <- confusionMatrix(multinom_1_pred, as.factor(test[, "label"]))
+accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
+pred.table.multinom <- cm.multinom$table
+print(pred.table.multinom)
 ```
+
+Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%.
 
 
 #### Model 2: Support Vector Machine: 
@@ -147,11 +218,6 @@ pred.table.svm.linear <- cm.svm.linear$table
 print(pred.table.svm.linear)
 ```
 
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
-```
 
 Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%.
 
@@ -174,15 +240,12 @@ pred.table.svm.radial <- cm.svm.radial$table
 print(pred.table.svm.radial)
 ```
 
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
-```
-
 Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%.
 
 #### Model 3: k-Nearest-Neighbors (KNN) 
+
+##### 1. Find the best k
+We test k from 1 to 20, and find the k with the highest accuracy to perform KNN:
 ```{r}
 # seperate the variables and labels for train and test dataset
 
@@ -208,6 +271,13 @@ print(accuracy.rate)
 best_k = which(accuracy.rate == max(accuracy.rate))
 print(best_k)
 
+```
+
+Therefore, the best k among 1 to 20 is `r best_k`, which shows highest accuracy.       
+
+
+##### 2. Build the model with best k: 
+```{r}
 # use the best k to train
 system.time({
   KNN_pred <- knn(train = standardized.train_KNN, test = standardized.test_KNN, cl = train_label, k= best_k)
@@ -221,81 +291,86 @@ cm.knn <- confusionMatrix(KNN_pred, as.factor(test[, "label"]))
 accuracy.knn <- round(as.numeric(cm.knn$overall[1])*100, digits = 2)
 pred.table.knn <- cm.knn$table
 print(pred.table.knn)
-
-```
-
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
 ```
 
 
-We test different k from 1 to 20, and found that k = `r best_k` showed highest accuracy.
 Results: Accuracy of using kNN with k = `r best_k` is `r accuracy.knn`%.
 
 #### Model 4: Decision Tree
-##### 1. Use default one number of boosting trial
+##### 1. Find the best boosting trials: 
+We test boosting trial from 1 to 20, and find the boosting trials with the highest accuracy to perform decision tree:
 ```{r}
-# build decision tree model 
-system.time({
-  decision.tree <- C5.0(train %>% dplyr::select(-label, -label_num), train$label)
-})
-#str(decision.tree)
-#plot(decision.tree)
-print(decision.tree)
+# find the best boosting trials
+accuracy.rate = NULL
+for(i in 1:20){
+    ds.tree.find <- C5.0(train %>% dplyr::select(-label, -label_num), train$label, trials = i)
+    ds.find.pred <- predict(ds.tree.find, test %>% dplyr::select(-label, -label_num))
+    cm.ds.tree.find <- confusionMatrix(ds.find.pred, as.factor(test[, "label"]))
+    accuracy.cm.find <- round(as.numeric(cm.ds.tree.find$overall[1])*100, digits = 2)
+    accuracy.rate[i] = accuracy.cm.find
+}
+print(accuracy.rate)
 
-# predict fault types 
-ds.pred <- predict(decision.tree,test %>% dplyr::select(-label, -label_num))
-# table(ds.pred)
-
-#cross tabulation of predicted vs actual values 
-CrossTable(test$label, ds.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
-           dnn = c('actual faults', 'predicted faults'))
-
-# confusion matrix
-cm.ds.tree <- confusionMatrix(ds.pred, as.factor(test[, "label"]))
-accuracy.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[1])*100, digits = 2)
-pred.table.ds.tree <- cm.ds.tree$table
-print(pred.table.ds.tree)
+# find the best boosting trial with highest accuracy
+best_t = which(accuracy.rate == max(accuracy.rate))
+print(best_t)
 
 ```
 
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
-```
-
-Results: Accuracy of using decision tree with one boosting trial is `r accuracy.cm.ds.tree`%.
+Therefore, the best boosting trial is `r best_t`, which shows highest accuracy.
 
 
-##### 2. Setting boosting trials to 12
+##### 2. Build the model with best boosting trials: 
+Now, we trained the model with the best boosting trials found in the previous step.
 ```{r}
 #improve accuracy or reliability (give cost matrix dpending on if false positive or false negative is better)
 system.time({
-  ds.tree.boost12 <- C5.0(train %>% dplyr::select(-label, -label_num), train$label, trials = 12)
+  ds.tree.boost <- C5.0(train %>% dplyr::select(-label, -label_num), train$label, trials = best_t)
 })
-print(ds.tree.boost12)
+print(ds.tree.boost)
+# summary(ds.tree.boost)
 
-# summary(ds.tree.boost12)
-ds.tree.boost12.pred <- predict(ds.tree.boost12, test %>% dplyr::select(-label, -label_num))
+ds.tree.boost.pred <- predict(ds.tree.boost, test %>% dplyr::select(-label, -label_num))
 
-CrossTable(test$label, ds.tree.boost12.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual label', 'label predictions'))
+#CrossTable(test$label, ds.tree.boost12.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual label', 'label predictions'))
 
-cm.ds.tree.12 <- confusionMatrix(ds.tree.boost12.pred, as.factor(test[, "label"]))
-accuracy.cm.ds.tree.12 <- round(as.numeric(cm.ds.tree.12$overall[1])*100, digits = 2)
-pred.table.ds.tree.12 <- cm.ds.tree.12$table
-print(pred.table.ds.tree.12)
+cm.ds.tree <- confusionMatrix(ds.tree.boost.pred, as.factor(test[, "label"]))
+accuracy.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[1])*100, digits = 2)
+pred.table.ds.tree <- cm.ds.tree$table
+print(pred.table.ds.tree)
 ```
 
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
-```
+Result for summary of the decision tree model:     
+Attribute usage:      
 
-Results: Accuracy of using decision tree with 12 boosting trials is `r accuracy.cm.ds.tree.12`%.
+	100.00%	Steel_Plate_Thickness        
+	100.00%	Outside_X_Index       
+	100.00%	LogOfAreas       
+	100.00%	Log_X_Index       
+	 96.39%	Length_of_Conveyer         
+	 95.29%	Maximum_of_Luminosity         
+	 88.81%	Edges_Index       
+	 86.89%	SteelType        
+	 86.67%	Log_Y_Index       
+	 83.95%	X_Minimum       
+	 80.27%	Orientation_Index     
+	 74.23%	Y_Maximum       
+	 72.97%	Edges_X_Index      
+	 70.99%	Square_Index      
+	 69.37%	Edges_Y_Index      
+	 68.70%	Y_Minimum      
+	 59.79%	X_Maximum      
+	 59.79%	Empty_Index      
+	 56.92%	Luminosity_Index      
+	 56.19%	Minimum_of_Luminosity          
+	 46.54%	Pixels_Areas      
+	 36.30%	Y_Perimeter      
+	 34.98%	X_Perimeter      
+	 34.76%	SigmoidOfAreas      
+	 27.47%	Sum_of_Luminosity      
+	 21.43%	Outside_Global_Index       
+
+Results: Accuracy of using decision tree with `r best_t` boosting trials is `r accuracy.cm.ds.tree`%.
 
 
 #### Model 5: Artifical Neural Network (ANN) 
@@ -320,8 +395,8 @@ colnames(standardized.test_ANN)[dim(standardized.test_ANN)[2]] <- "label_num"
 system.time({
   ANN_model <- neuralnet(formula = as.factor(label_num) ~ .,
                        data = standardized.train_ANN, 
-                       rep = 4, # number of repetitions for the neural network's training.
-                       hidden = 3)  
+                       rep = 5, # number of repetitions for the neural network's training.
+                       hidden = 4)  
 })
 
 # plot(ANN_model)
@@ -342,11 +417,6 @@ pred.table.ann <- cm.ann$table
 print(pred.table.ann)
 ```
 
-Compare to true test label: 
-```{r}
-# true test label
-table(test$label)
-```
 
 Plotting the ANN model: 
 ![ann](ann_3node.png)
@@ -356,10 +426,12 @@ Results: Accuracy of using ANN 1 hidden layers with 5 nodes is `r accuracy.cm.an
 ### VI. Comparing Accuracy
 The below tables show the accuracy of the above five methods:
 ```{r}
-
+result.table = data.frame(Model = c("Multinomial LR", "SVM radial", paste0("KNN: k = ", best_k), paste0("Decision tree: trial = ", best_t), "ANN with 3 nodes"),
+                          Accuracy = c(accuracy.multinom, accuracy.svm.radial, accuracy.knn,  accuracy.cm.ds.tree, accuracy.cm.ann))
+print(result.table)
 ```
 
 
-### VII. Application
+### VII. Application & Conclusion
 
 
