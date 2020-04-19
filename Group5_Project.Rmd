@@ -42,18 +42,19 @@ library(gmodels, quietly = T)
 library(neuralnet, quietly = T)
 library(nnet, quietly = T)
 library(stargazer, quietly = T)
+library(knitr, quietly = T)
 faults <- read.csv("faults_recode.csv")
 
 ```
 
 ### III. Data Cleaning and Exploration
-First, let's take a look at the data:
+1. First, let's take a look at the data:
 We can see that are total 1941 observations in the data, and total 36 variables, including the indicator for seven types of defects: `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults`. The variable `label` is the combined results for the above seven indicators.
 ```{r}
 faults %>% glimpse()
 ```
 
-Checking for missing values: 
+2. Checking for missing values: 
 ```{r}
 faults %>% miss_var_summary() #No NAs
 #any(is.na(faults))
@@ -61,7 +62,7 @@ faults %>% miss_var_summary() #No NAs
 There are no missing values in this dataset. 
 
 
-Now, let's take a look at the distribution of each defects, we can see that most defects fall in `Bumps`, `K_Scatch` and `Other_Faults`.
+3. Now, let's take a look at the distribution of each defects, we can see that most defects fall in `Bumps`, `K_Scatch` and `Other_Faults`.
 ```{r}
 table(faults$label)
 ggplot(data = faults, aes(label, fill = label)) +
@@ -69,18 +70,25 @@ ggplot(data = faults, aes(label, fill = label)) +
   ggtitle("Distribution of seven defects (N = 1941)")
 ```
 
-Create another variable `label_num`, indicate numeric values for seven types of defects.
+4. Create another variable `relabel` indicates the combined version of the seven defects, we combined `Stains` and `Dirtiness` to `Other_Faults`, since `Stains` and `Dirtiness` showed the least freqeuncies among the seven defects. After combinding, we reached to five types of defects: `Pastry`, `Z_Scratch`, `K_Scatch`, `Bumps`, `Other_Faults`.
 ```{r}
-faults$label_num = ifelse(faults$label =="Pastry", 1,
-ifelse(faults$label == "Z_Scratch", 2,
-ifelse(faults$label == "K_Scatch", 3,
-ifelse(faults$label == "Stains", 4,
-ifelse(faults$label == "Dirtiness", 5,
-ifelse(faults$label == "Bumps", 6, 
-ifelse(faults$label == "Other_Faults", 7, NA)))))))
+faults$relabel = ifelse(faults$label == "Pastry", 1,
+                        ifelse(faults$label == "Z_Scratch", 2,
+                               ifelse(faults$label == "K_Scatch", 3,
+                                      ifelse(faults$label == "Bumps", 4,
+                                             ifelse(faults$label == "Stains", 5,
+                                                    ifelse(faults$label == "Dirtiness",5, 
+                                                           ifelse(faults$label == "Other_Faults", 5, NA)))))))
+faults$relabel = factor(faults$relabel, levels = c(1, 2, 3, 4, 5), labels = c("Pastry", "Z_Scratch", "K_Scatch", "Bumps", "Other_Faults"))
+
+table(faults$relabel)
+
+ggplot(data = faults, aes(relabel, fill = relabel)) +
+  geom_bar() +
+  ggtitle("Distribution of five defects (N = 1941)")
 ```
 
-Below are the box-whisker plots showing distribution of some of our training parameters:
+5. Below are the box-whisker plots showing distribution of some of our training parameters:
 ```{r, out.width=c('50%', '50%')}
 boxplot(faults$X_Minimum, faults$X_Maximum,
         horizontal = TRUE,
@@ -114,20 +122,18 @@ boxplot(faults$Edges_Index, faults$Empty_Index, faults$Square_Index,
 ```
 
 
-Recoding of type of steel, type of steel is either "A300" (`TypeOfSteel_A300`) or "A400" (`TypeOfSteel_A400`), in here, we combine these two variables to an indicator `SteelType`, indicates 1 for A300, 0 for A400. 
+6. Recoding of type of steel, type of steel is either "A300" (`TypeOfSteel_A300`) or "A400" (`TypeOfSteel_A400`), in here, we combine these two variables to an indicator `SteelType`, indicates 1 for A300, 0 for A400. 
 ```{r}
 #Type of steel is merged into a single column and mase to factor
 faults$SteelType<-ifelse(faults$TypeOfSteel_A300==1,1,0)
 #faults$SteelType<-as.factor(faults$SteelType)
 ```
 
-Select the variables used for training, note that `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults` are the seven types of defects and are combined in the variables `label`, which will be set as our training outcome. Therefore, we removed the seven types of detects in the training data.
+7. Select the variables used for training, note that `Pastry`, `Z_Scratch`, `K_Scatch`, `Stains`, `Dirtiness`, `Bumps`, `Other_Faults` are the indicators for seven types of defects, which are now combined into `relabel`. `Relabel` will be set as our training outcome. 
 ```{r}
 # select relevant variables
 # outcome: sdata$label
-new.faults = faults %>% dplyr::select(-c(Pastry, Z_Scratch, K_Scatch, Stains, Dirtiness, Bumps, Other_Faults, TypeOfSteel_A300, TypeOfSteel_A400))
-new.faults$label = as.factor(new.faults$label)
-new.faults$label_num = factor(new.faults$label_num)
+new.faults = faults %>% dplyr::select(-c(Pastry, Z_Scratch, K_Scatch, Stains, Dirtiness, Bumps, Other_Faults, TypeOfSteel_A300, TypeOfSteel_A400, label))
 ```
 
 `new.faults` is our final cleaned data that will be used for machine learning training.
@@ -146,13 +152,13 @@ test <- new.faults[-train_ind,]
 
 Lets take a look at the distribution of the seven defects in training and testing dataset:
 ```{r, out.width=c('50%', '50%')}
-ggplot(data = train, aes(label, fill = label)) +
+ggplot(data = train, aes(relabel, fill = relabel)) +
   geom_bar() +
-  ggtitle("Distribution of seven defects in training set (N = 1358)")
+  ggtitle("Distribution of five defects in training set (N = 1358)")
 
-ggplot(data = test, aes(label, fill = label)) +
+ggplot(data = test, aes(relabel, fill = relabel)) +
   geom_bar() +
-  ggtitle("Distribution of seven defects in testing set (N = 583)")
+  ggtitle("Distribution of five defects in testing set (N = 583)")
 ```
 
 
@@ -174,7 +180,7 @@ Since we have seven types of detects as our outcome, we use multinomial logistic
 
 # NNET-> Multinom
 system.time({
-  multinom_1<- multinom(as.factor(label) ~.,data= train %>% select(-c(label_num)))
+  multinom_1<- multinom(relabel ~.,data= train)
 })
 # summary(multinom_1)
 
@@ -182,19 +188,20 @@ system.time({
 stargazer(multinom_1, type="text", out="multi1.txt")
 
 # predict test result
-multinom_1_pred<-predict(multinom_1, test %>% select(-c(label_num, label)))
+multinom_1_pred<-predict(multinom_1, test %>% select(-c(relabel)))
 # CrossTable(multinom_1_pred, test$label)
 #Accuracy
 # sum(multinom_1_pred==fault_test$label)/nrow(fault_test)*100
 
 # confusion matrix
-cm.multinom <- confusionMatrix(multinom_1_pred, as.factor(test[, "label"]))
+cm.multinom <- confusionMatrix(multinom_1_pred, as.factor(test[, "relabel"]))
 accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
+kappa.multinom <- round(as.numeric(cm.multinom$overall[2])*100, digits = 2)
 pred.table.multinom <- cm.multinom$table
 print(pred.table.multinom)
 ```
 
-Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%.
+Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%. Kappa statistics shows `r kappa.multinom`%. 
 
 
 #### Model 2: Support Vector Machine: 
@@ -202,45 +209,47 @@ Results: Accuracy of using multinomial logistic regression is `r accuracy.multin
 ```{r}
 # start training using linear kernal
 system.time({
-  svm.linear <- svm(formula = label ~ ., 
-                 data = train %>% dplyr::select(-label_num), 
+  svm.linear <- svm(formula = relabel ~ ., 
+                 data = train, 
                  type = 'C-classification', 
                  kernel = 'linear') 
 })
 
 # predict test result
-svm.linear.pred <- predict(svm.linear, newdata = test %>% dplyr::select(-label, label_num)) 
+svm.linear.pred <- predict(svm.linear, newdata = test %>% dplyr::select(-relabel)) 
 
 # confusion matrix
-cm.svm.linear <- confusionMatrix(svm.linear.pred, as.factor(test[, "label"]))
+cm.svm.linear <- confusionMatrix(svm.linear.pred, as.factor(test[, "relabel"]))
 accuracy.svm.linear <- round(as.numeric(cm.svm.linear$overall[1])*100, digits = 2)
+kappa.svm.linear <- round(as.numeric(cm.svm.linear$overall[2])*100, digits = 2)
 pred.table.svm.linear <- cm.svm.linear$table
 print(pred.table.svm.linear)
 ```
 
 
-Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%.
+Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%. Kappa statistics shows `r kappa.svm.linear`%.
 
 ##### 2. Radial Kernal
 ```{r}
 system.time({
-  svm.radial <- svm(formula = label ~ ., 
-                 data = train %>% dplyr::select(-label_num), 
+  svm.radial <- svm(formula = relabel ~ ., 
+                 data = train, 
                  type = 'C-classification', 
                  kernel = 'radial') 
 })
 
 # predict test result
-svm.radial.pred <- predict(svm.radial, newdata = test %>% dplyr::select(-label, -label_num)) 
+svm.radial.pred <- predict(svm.radial, newdata = test %>% dplyr::select(-relabel)) 
 
 # confusion matrix
-cm.svm.radial <- confusionMatrix(svm.radial.pred, as.factor(test[, "label"]))
+cm.svm.radial <- confusionMatrix(svm.radial.pred, as.factor(test[, "relabel"]))
 accuracy.svm.radial <- round(as.numeric(cm.svm.radial$overall[1])*100, digits = 2)
+kappa.svm.radial <- round(as.numeric(cm.svm.radial$overall[2])*100, digits = 2)
 pred.table.svm.radial <- cm.svm.radial$table
 print(pred.table.svm.radial)
 ```
 
-Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%.
+Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%. Kappa statistics shows `r kappa.svm.radial`%.
 
 #### Model 3: k-Nearest-Neighbors (KNN) 
 
@@ -249,10 +258,10 @@ We test k from 1 to 20, and find the k with the highest accuracy to perform KNN:
 ```{r}
 # seperate the variables and labels for train and test dataset
 
-train_label <- train[,"label"]
-train_KNN <- train  %>% dplyr::select(-label, -label_num)
-test_label <- test[,"label"]
-test_KNN <- test %>% dplyr::select(-label, -label_num)
+train_label <- train[,"relabel"]
+train_KNN <- train %>% select(-relabel)
+test_label <- test[,"relabel"]
+test_KNN <- test %>% select(-relabel)
 
 
 #do the z-Score Standardization for dataset
@@ -287,14 +296,15 @@ system.time({
 # accuracy.knn = round(mean(test_label== KNN_pred)*100, digits = 2)
 
 # confusion matrix
-cm.knn <- confusionMatrix(KNN_pred, as.factor(test[, "label"]))
+cm.knn <- confusionMatrix(KNN_pred, as.factor(test[, "relabel"]))
 accuracy.knn <- round(as.numeric(cm.knn$overall[1])*100, digits = 2)
+kappa.knn <- round(as.numeric(cm.knn$overall[2])*100, digits = 2)
 pred.table.knn <- cm.knn$table
 print(pred.table.knn)
 ```
 
 
-Results: Accuracy of using kNN with k = `r best_k` is `r accuracy.knn`%.
+Results: Accuracy of using kNN with k = `r best_k` shows `r accuracy.knn`%. Kappa statistics shows `r kappa.knn`%.
 
 #### Model 4: Decision Tree
 ##### 1. Find the best boosting trials: 
@@ -303,16 +313,16 @@ We test boosting trial from 1 to 20, and find the boosting trials with the highe
 # find the best boosting trials
 accuracy.rate = NULL
 for(i in 1:20){
-    ds.tree.find <- C5.0(train %>% dplyr::select(-label, -label_num), train$label, trials = i)
-    ds.find.pred <- predict(ds.tree.find, test %>% dplyr::select(-label, -label_num))
-    cm.ds.tree.find <- confusionMatrix(ds.find.pred, as.factor(test[, "label"]))
+    ds.tree.find <- C5.0(train %>% select(-relabel) , train$relabel, trials = i)
+    ds.find.pred <- predict(ds.tree.find, test %>% select(-relabel))
+    cm.ds.tree.find <- confusionMatrix(ds.find.pred, as.factor(test[, "relabel"]))
     accuracy.cm.find <- round(as.numeric(cm.ds.tree.find$overall[1])*100, digits = 2)
     accuracy.rate[i] = accuracy.cm.find
 }
 print(accuracy.rate)
 
 # find the best boosting trial with highest accuracy
-best_t = which(accuracy.rate == max(accuracy.rate))
+best_t = min(which(accuracy.rate == max(accuracy.rate)))
 print(best_t)
 
 ```
@@ -325,52 +335,51 @@ Now, we trained the model with the best boosting trials found in the previous st
 ```{r}
 #improve accuracy or reliability (give cost matrix dpending on if false positive or false negative is better)
 system.time({
-  ds.tree.boost <- C5.0(train %>% dplyr::select(-label, -label_num), train$label, trials = best_t)
+  ds.tree.boost <- C5.0(train %>% dplyr::select(-relabel), train$relabel, trials = best_t)
 })
 print(ds.tree.boost)
 # summary(ds.tree.boost)
-
-ds.tree.boost.pred <- predict(ds.tree.boost, test %>% dplyr::select(-label, -label_num))
-
 #CrossTable(test$label, ds.tree.boost12.pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual label', 'label predictions'))
 
-cm.ds.tree <- confusionMatrix(ds.tree.boost.pred, as.factor(test[, "label"]))
+ds.tree.boost.pred <- predict(ds.tree.boost, test %>% select(-relabel))
+cm.ds.tree <- confusionMatrix(ds.tree.boost.pred, as.factor(test[, "relabel"]))
 accuracy.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[1])*100, digits = 2)
+kappa.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[2])*100, digits = 2)
 pred.table.ds.tree <- cm.ds.tree$table
 print(pred.table.ds.tree)
 ```
 
 Result for summary of the decision tree model:     
-Attribute usage:      
+Attribute usage:    
 
-	100.00%	Steel_Plate_Thickness        
-	100.00%	Outside_X_Index       
-	100.00%	LogOfAreas       
-	100.00%	Log_X_Index       
-	 96.39%	Length_of_Conveyer         
-	 95.29%	Maximum_of_Luminosity         
-	 88.81%	Edges_Index       
-	 86.89%	SteelType        
-	 86.67%	Log_Y_Index       
-	 83.95%	X_Minimum       
-	 80.27%	Orientation_Index     
-	 74.23%	Y_Maximum       
-	 72.97%	Edges_X_Index      
-	 70.99%	Square_Index      
-	 69.37%	Edges_Y_Index      
-	 68.70%	Y_Minimum      
-	 59.79%	X_Maximum      
-	 59.79%	Empty_Index      
-	 56.92%	Luminosity_Index      
-	 56.19%	Minimum_of_Luminosity          
-	 46.54%	Pixels_Areas      
-	 36.30%	Y_Perimeter      
-	 34.98%	X_Perimeter      
-	 34.76%	SigmoidOfAreas      
-	 27.47%	Sum_of_Luminosity      
-	 21.43%	Outside_Global_Index       
+	100.00%	Length_of_Conveyer   
+	100.00%	Steel_Plate_Thickness   
+	100.00%	Outside_X_Index   
+	100.00%	LogOfAreas   
+	100.00%	Log_X_Index   
+	 99.93%	Orientation_Index   
+	 99.26%	Luminosity_Index   
+	 99.19%	Maximum_of_Luminosity   
+	 98.38%	Minimum_of_Luminosity   
+	 97.94%	X_Maximum   
+	 97.79%	Log_Y_Index   
+	 97.20%	SteelType   
+	 96.24%	Edges_Index   
+	 94.04%	Y_Minimum   
+	 93.96%	Empty_Index   
+	 91.97%	X_Minimum   
+	 85.35%	Square_Index   
+	 83.36%	Edges_Y_Index   
+	 82.62%	Sum_of_Luminosity   
+	 81.96%	Edges_X_Index   
+	 81.15%	Pixels_Areas   
+	 79.01%	X_Perimeter   
+	 75.33%	Y_Perimeter   
+	 54.42%	Y_Maximum   
+	 42.19%	SigmoidOfAreas   
+	 40.65%	Outside_Global_Index        
 
-Results: Accuracy of using decision tree with `r best_t` boosting trials is `r accuracy.cm.ds.tree`%.
+Results: Accuracy of using decision tree with `r best_t` boosting trials is `r accuracy.cm.ds.tree`%. Kappa statistics shows `r kappa.cm.ds.tree`%.
 
 
 #### Model 5: Artifical Neural Network (ANN) 
@@ -382,27 +391,26 @@ Results: Accuracy of using decision tree with `r best_t` boosting trials is `r a
 #test_ANN <- test_ANN[,-26]
 
 #do the z-Score Standardization for dataset
-standardized.train_ANN <- scale(train %>% dplyr::select(-c(label, label_num)))
-standardized.test_ANN <- scale(test %>% dplyr::select(-c(label, label_num)))
+standardized.train_ANN <- scale(train %>% dplyr::select(-relabel))
+standardized.test_ANN <- scale(test %>% dplyr::select(-relabel))
 
 # merge label back to train/test data
-standardized.train_ANN <- cbind(standardized.train_ANN, train$label_num)
-colnames(standardized.train_ANN)[dim(standardized.train_ANN)[2]] <- "label_num"
-standardized.test_ANN <- cbind(standardized.test_ANN, test$label_num)
-colnames(standardized.test_ANN)[dim(standardized.test_ANN)[2]] <- "label_num"
+standardized.train_ANN <- as.data.frame(cbind(standardized.train_ANN, train$relabel))
+colnames(standardized.train_ANN)[dim(standardized.train_ANN)[2]] <- "relabel"
+standardized.test_ANN <- as.data.frame(cbind(standardized.test_ANN, test$relabel))
+colnames(standardized.test_ANN)[dim(standardized.test_ANN)[2]] <- "relabel"
 
 # ANN modeling
 system.time({
-  ANN_model <- neuralnet(formula = as.factor(label_num) ~ .,
+  ANN_model <- neuralnet(formula = as.factor(relabel) ~ .,
                        data = standardized.train_ANN, 
-                       rep = 5, # number of repetitions for the neural network's training.
                        hidden = 4)  
 })
 
 # plot(ANN_model)
 
 # obtain model results
-test_results <- predict(ANN_model, standardized.test_ANN[,1:26])
+test_results <- predict(ANN_model, standardized.test_ANN %>% select(-relabel))
 # obtain predicted 
 #predicted_label <- test_results$net.result
 #table(standardized.test_ANN[,"label_num"], apply(test_results, 1, which.max))
@@ -410,42 +418,46 @@ test_results <- predict(ANN_model, standardized.test_ANN[,1:26])
 # examine the correlation between predicted and actual values
 #cor(predicted_label, standardized.test_ANN[,"label_num"])
 
-cm.ann <- confusionMatrix(as.factor(apply(test_results, 1, which.max)), as.factor(test[, "label_num"]))
+cm.ann <- confusionMatrix(as.factor(apply(test_results, 1, which.max)), as.factor(standardized.test_ANN[, "relabel"]))
 
 accuracy.cm.ann <- round(as.numeric(cm.ann$overall[1])*100, digits = 2)
+kappa.cm.ann <- round(as.numeric(cm.ann$overall[2])*100, digits = 2)
 pred.table.ann <- cm.ann$table
 print(pred.table.ann)
 ```
 
 
 Plotting the ANN model: 
-![ann](ann_3node.png)
+![ann](ann_relabel_4node.png)
 
-Results: Accuracy of using ANN 1 hidden layers with 5 nodes is `r accuracy.cm.ann`%.
+Results: Accuracy of using ANN 1 hidden layers with 4 nodes is `r accuracy.cm.ann`%. Kappa statistics shows `r kappa.cm.ann`%. 
 
 ### VI. Comparing Accuracy
 The below tables show the accuracy of the above five methods:
-```{r}
+```{r, echo = FALSE}
 result.table = data.frame(Model = c("Multinomial LR", "SVM radial", paste0("KNN: k = ", best_k), paste0("Decision tree: trial = ", best_t), "ANN with 3 nodes"),
-                          Accuracy = c(accuracy.multinom, accuracy.svm.radial, accuracy.knn,  accuracy.cm.ds.tree, accuracy.cm.ann))
-print(result.table)
+                          Accuracy = c(accuracy.multinom, accuracy.svm.radial, accuracy.knn,  accuracy.cm.ds.tree, accuracy.cm.ann),
+                          kappa = c(kappa.multinom, kappa.svm.radial, kappa.knn, kappa.cm.ds.tree, kappa.cm.ann))
+kable(result.table)
 ```
 
 
 ### VII. Application & Conclusion
+          
+Our dataset and model together answer the question, what kind of defect does a steel plate has, which is simple, but has a lot of business implications. Steel is mostly used in construction, "accounting for more than 50% of world steel demand". [2] To reduce risk for safety, environmental impact, and economic loss, fault detection becomes really important in the manufacutring processes. In the manufacturing industry this is called "Fault Diagnosis (FD)" [1] and "has a major importance to enhance the quality of manufacutring and to lessen the cost of product testing." [1] For this project, the team developed several ML models that would help detect the types of faults as early as possible and prevent serious issues from occurring.       
+   
+The seven types of steel faults that the team analyzed in this dataset are considered the most common defects in steel plates. The team developed five FD models including logistic regression, ANN, KNN, SVM, and decision tree (with and without boosting). The team then compared these using accuracy generated through testing with our test dataset. Among these five models, the decision tree model with `r best_t` boosting trials demonstrates the most accuracy of (`r accuracy.cm.ds.tree`%), outperforming all other models all of which showed accuracy of around 70%.  Looking at the summary of attribute usage for our decision tree model, we also find that the top four fault characteristics of a steel plate with 100% attribute usage are thickness of steel plate, outside x index, log x index, and log of area.     
 
-```{}
-Our dataset and model together answer the question, what kind of defect does a steel plate has, which is simple, but has a lot of business implications. Steel is mostly used in construction, "accounting for more than 50% of world steel demand". [2] To reduce risk for safety, environmental impact, and economic loss, fault detection becomes really important in the manufacutring processes. In the manufacturing industry this is called "Fault Diagnosis (FD)" [1] and "has a major importance to enhance the quality of manufacutring and to lessen the cost of product testing." [1] For this project, the team developed several ML models that would help detect the types of faults as early as possible and prevent serious issues from occurring. 
-
-The seven types of steel faults that the team analyzed in this dataset are considered the most common defects in steel plates. The team developed five FD models including logistic regression, ANN, KNN, SVM, and decision tree (with and without boosting). The team then compared these using accuracy generated through testing with our test dataset. Among these five models, the decision tree model with `r best_t` boosting trials demonstrates the most accuracy of (`r accuracy.cm.ds.tree`%), outperforming all other models all of which showed accuracy of around 70%.  Looking at the summary of attribute usage for our decision tree model, we also find that the top four fault characteristics of a steel plate with 100% attribute usage are thickness of steel plate, outside x index, log x index, and log of area. 
-
-The decision tree model with boosting trials the team developed and selected to be the best among the models tested can provide useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, "during manufacturing downtimes, most of the time spent is on localization of the fault rather than carrying out the actual remediation, as fault diagnosis is the most challenging phase of machine repairs." [3] The predictions of our model generated through machine learning techniques will be able to provide timely diagnosis for faults and help keep the manufacturers stay competitive by reducing machine downtimes, which in turn increase production speed and lower costs. 
+The decision tree model with boosting trials the team developed and selected to be the best among the models tested can provide useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, "during manufacturing downtimes, most of the time spent is on localization of the fault rather than carrying out the actual remediation, as fault diagnosis is the most challenging phase of machine repairs." [3] The predictions of our model generated through machine learning techniques will be able to provide timely diagnosis for faults and help keep the manufacturers stay competitive by reducing machine downtimes, which in turn increase production speed and lower costs.        
+```{r, echo = FALSE}
+att.usage <- data.frame(Variables = c("Length_of_Conveyer", "Steel_Plate_Thickness", "Outside_X_Index", "LogOfAreas", "Log_X_Index", "Orientation_Index", "Luminosity_Index", "Maximum_of_Luminosity", "Minimum_of_Luminosity", "X_Maximum", "Log_Y_Index", "SteelType", "Edges_Index", "Y_Minimum", "Empty_Index", "X_Minimum", "Square_Index", "Edges_Y_Index", "Sum_of_Luminosity", "Edges_X_Index", "Pixels_Areas", "X_Perimeter", "Y_Perimeter", "Y_Maximum"),
+                                      Attribute_usage = c("100%","100%","100%","100%","100%", "99.93%", "99.26%", "99.19%", "98.38%", "97.94%", "97.79%", "97.20%", "96.24%", "94.04%", "93.96%", "91.97%", "85.35%", "83.36%", "82.62%", "81.96%", "81.15%", "79.01%", "75.33%", "54.42%"))
+kable(att.usage)
 ```
 
-###Reference
-```{}
-[1] https://www.researchgate.net/publication/265124971_Steel_Plates_Faults_Diagnosis_with_Data_Mining_Models
-[2] https://www.worldsteel.org/steel-by-topic/steel-markets/buildings-and-infrastructure.html
-[3] https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=923309
-```
+            
+### VIII. Reference
+[1] https://www.researchgate.net/publication/265124971_Steel_Plates_Faults_Diagnosis_with_Data_Mining_Models   
+[2] https://www.worldsteel.org/steel-by-topic/steel-markets/buildings-and-infrastructure.html   
+[3] https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=923309    
 
