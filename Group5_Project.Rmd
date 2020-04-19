@@ -90,35 +90,53 @@ ggplot(data = faults, aes(relabel, fill = relabel)) +
 
 5. Below are the box-whisker plots showing distribution of some of our training parameters:
 ```{r, out.width=c('50%', '50%')}
-boxplot(faults$X_Minimum, faults$X_Maximum,
-        horizontal = TRUE,
-        main = "Boxplot for X_Minimum, X_Maximum",
-        names = c("X_Min", "X_Max"),
-        col = c("orange","green"),
-        las = 2,
-        notch = TRUE)
-boxplot(faults$Y_Minimum, faults$Y_Maximum,
-        horizontal = TRUE,
-        main = "Boxplot for Y_Minimum, Y_Maximum",
-        names = c("Y_Min", "Y_Max"),
-        col = c("orange","green"),
-        las = 2,
-        notch = TRUE)
-boxplot(faults$Minimum_of_Luminosity, faults$Maximum_of_Luminosity,
-        horizontal = TRUE,
-        main = "Boxplot for Luminosity",
-        names = c("Min", "Max"),
-        col = c("orange","green"),
-        las = 2,
-        notch = TRUE)
-boxplot(faults$Edges_Index, faults$Empty_Index, faults$Square_Index, 
-        horizontal = TRUE,
-        main = "Boxplot for Indicies",
-        at = c(1,3,5),
-        names = c("Edges", "Empty", "Square"),
-        col = c("orange","green", "purple"),
-        las = 3,
-        notch = TRUE)
+# distribution of X_Minimum, X_Maximum
+ggdata_Xmin = cbind(faults[,c("X_Minimum", "relabel")], data.frame(Variable = rep("X_Minimum", 1941)))
+colnames(ggdata_Xmin) = c("Value", "Relabel", "Variable")
+ggdata_Xmax = cbind(faults[,c("X_Maximum", "relabel")], data.frame(Variable = rep("X_Maximum", 1941)))
+colnames(ggdata_Xmax) = c("Value", "Relabel", "Variable")
+ggdata_X = rbind(ggdata_Xmin, ggdata_Xmax)
+
+ggplot(data = ggdata_X, aes(x = Variable, y = Value, fill = Relabel)) +
+  geom_boxplot() +
+  ggtitle("Distribution of X min/max across each defects")
+
+# distribution of Y_Minimum, Y_Maximum
+ggdata_Ymin = cbind(faults[,c("Y_Minimum", "relabel")], data.frame(Variable = rep("Y_Minimum", 1941)))
+colnames(ggdata_Ymin) = c("Value", "Relabel", "Variable")
+ggdata_Ymax = cbind(faults[,c("Y_Maximum", "relabel")], data.frame(Variable = rep("Y_Maximum", 1941)))
+colnames(ggdata_Ymax) = c("Value", "Relabel", "Variable")
+ggdata_Y = rbind(ggdata_Ymin, ggdata_Ymax)
+
+ggplot(data = ggdata_Y, aes(x = Variable, y = Value, fill = Relabel)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Y min/max across each defects")
+
+# distribution of Minimum_of_Luminosity, Maximum_of_Luminosity
+ggdata_Lummin = cbind(faults[,c("Minimum_of_Luminosity", "relabel")], data.frame(Variable = rep("Minimum_of_Luminosity", 1941)))
+colnames(ggdata_Lummin) = c("Value", "Relabel", "Variable")
+ggdata_Lummax = cbind(faults[,c("Maximum_of_Luminosity", "relabel")], data.frame(Variable = rep("Maximum_of_Luminosity", 1941)))
+colnames(ggdata_Lummax) = c("Value", "Relabel", "Variable")
+ggdata_Lum = rbind(ggdata_Lummin, ggdata_Lummax)
+
+ggplot(data = ggdata_Lum, aes(x = Variable, y = Value, fill = Relabel)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Luminosity min/max across each defects")
+
+# distribution of Edges_Index, Empty_Index, Square_Index
+ggdata_edge = cbind(faults[,c("Edges_Index", "relabel")], data.frame(Variable = rep("Edges_Index", 1941)))
+colnames(ggdata_edge) = c("Value", "Relabel", "Variable")
+ggdata_empty = cbind(faults[,c("Empty_Index", "relabel")], data.frame(Variable = rep("Empty_Index", 1941)))
+colnames(ggdata_empty) = c("Value", "Relabel", "Variable")
+ggdata_square = cbind(faults[,c("Square_Index", "relabel")], data.frame(Variable = rep("Square_Index", 1941)))
+colnames(ggdata_square) = c("Value", "Relabel", "Variable")
+
+ggdata_idx = rbind(ggdata_edge, ggdata_empty, ggdata_square)
+
+ggplot(data = ggdata_idx, aes(x = Variable, y = Value, fill = Relabel)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Edge/Empty/Square Index across each defects")
+
 ```
 
 
@@ -206,7 +224,7 @@ multinom_18_pred<-predict(multinom_18,test %>% select(-c(relabel)))
 # confusion matrix
 cm.multinom <- confusionMatrix(multinom_18_pred, as.factor(test[, "relabel"]))
 accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
-kappa.multinom <- round(as.numeric(cm.multinom$overall[2])*100, digits = 2)
+kappa.multinom <- round(as.numeric(cm.multinom$overall[2]), digits = 2)
 pred.table.multinom <- cm.multinom$table
 print(pred.table.multinom)
 #other models considered:
@@ -262,7 +280,7 @@ print(pred.table.multinom)
 #multinom_17<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+Y_Maximum+Minimum_of_Luminosity,data= train)
 ```
 
-Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%. Kappa statistics shows `r kappa.multinom`%. 
+Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%. Kappa statistics shows `r kappa.multinom`. 
 
 
 #### Model 2: Support Vector Machine: 
@@ -282,13 +300,13 @@ svm.linear.pred <- predict(svm.linear, newdata = test %>% dplyr::select(-relabel
 # confusion matrix
 cm.svm.linear <- confusionMatrix(svm.linear.pred, as.factor(test[, "relabel"]))
 accuracy.svm.linear <- round(as.numeric(cm.svm.linear$overall[1])*100, digits = 2)
-kappa.svm.linear <- round(as.numeric(cm.svm.linear$overall[2])*100, digits = 2)
+kappa.svm.linear <- round(as.numeric(cm.svm.linear$overall[2]), digits = 2)
 pred.table.svm.linear <- cm.svm.linear$table
 print(pred.table.svm.linear)
 ```
 
 
-Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%. Kappa statistics shows `r kappa.svm.linear`%.
+Results: Accuracy of using SVM linear kernal is `r accuracy.svm.linear`%. Kappa statistics shows `r kappa.svm.linear`.
 
 ##### 2. Radial Kernal
 ```{r}
@@ -305,12 +323,12 @@ svm.radial.pred <- predict(svm.radial, newdata = test %>% dplyr::select(-relabel
 # confusion matrix
 cm.svm.radial <- confusionMatrix(svm.radial.pred, as.factor(test[, "relabel"]))
 accuracy.svm.radial <- round(as.numeric(cm.svm.radial$overall[1])*100, digits = 2)
-kappa.svm.radial <- round(as.numeric(cm.svm.radial$overall[2])*100, digits = 2)
+kappa.svm.radial <- round(as.numeric(cm.svm.radial$overall[2]), digits = 2)
 pred.table.svm.radial <- cm.svm.radial$table
 print(pred.table.svm.radial)
 ```
 
-Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%. Kappa statistics shows `r kappa.svm.radial`%.
+Results: Accuracy of using SVM radial kernel is `r accuracy.svm.radial`%. Kappa statistics shows `r kappa.svm.radial`.
 
 #### Model 3: k-Nearest-Neighbors (KNN) 
 
@@ -359,13 +377,13 @@ system.time({
 # confusion matrix
 cm.knn <- confusionMatrix(KNN_pred, as.factor(test[, "relabel"]))
 accuracy.knn <- round(as.numeric(cm.knn$overall[1])*100, digits = 2)
-kappa.knn <- round(as.numeric(cm.knn$overall[2])*100, digits = 2)
+kappa.knn <- round(as.numeric(cm.knn$overall[2]), digits = 2)
 pred.table.knn <- cm.knn$table
 print(pred.table.knn)
 ```
 
 
-Results: Accuracy of using kNN with k = `r best_k` shows `r accuracy.knn`%. Kappa statistics shows `r kappa.knn`%.
+Results: Accuracy of using kNN with k = `r best_k` shows `r accuracy.knn`%. Kappa statistics shows `r kappa.knn`.
 
 #### Model 4: Decision Tree
 ##### 1. Find the best boosting trials: 
@@ -405,7 +423,7 @@ print(ds.tree.boost)
 ds.tree.boost.pred <- predict(ds.tree.boost, test %>% select(-relabel))
 cm.ds.tree <- confusionMatrix(ds.tree.boost.pred, as.factor(test[, "relabel"]))
 accuracy.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[1])*100, digits = 2)
-kappa.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[2])*100, digits = 2)
+kappa.cm.ds.tree <- round(as.numeric(cm.ds.tree$overall[2]), digits = 2)
 pred.table.ds.tree <- cm.ds.tree$table
 print(pred.table.ds.tree)
 ```
@@ -440,7 +458,7 @@ Attribute usage:
 	 42.19%	SigmoidOfAreas   
 	 40.65%	Outside_Global_Index        
 
-Results: Accuracy of using decision tree with `r best_t` boosting trials is `r accuracy.cm.ds.tree`%. Kappa statistics shows `r kappa.cm.ds.tree`%.
+Results: Accuracy of using decision tree with `r best_t` boosting trials is `r accuracy.cm.ds.tree`%. Kappa statistics shows `r kappa.cm.ds.tree`.
 
 
 #### Model 5: Artifical Neural Network (ANN) 
@@ -482,7 +500,7 @@ test_results <- predict(ANN_model, standardized.test_ANN %>% select(-relabel))
 cm.ann <- confusionMatrix(as.factor(apply(test_results, 1, which.max)), as.factor(standardized.test_ANN[, "relabel"]))
 
 accuracy.cm.ann <- round(as.numeric(cm.ann$overall[1])*100, digits = 2)
-kappa.cm.ann <- round(as.numeric(cm.ann$overall[2])*100, digits = 2)
+kappa.cm.ann <- round(as.numeric(cm.ann$overall[2]), digits = 2)
 pred.table.ann <- cm.ann$table
 print(pred.table.ann)
 ```
@@ -491,7 +509,7 @@ print(pred.table.ann)
 Plotting the ANN model: 
 ![ann](ann_relabel_4node.png)
 
-Results: Accuracy of using ANN 1 hidden layers with 4 nodes is `r accuracy.cm.ann`%. Kappa statistics shows `r kappa.cm.ann`%. 
+Results: Accuracy of using ANN 1 hidden layers with 4 nodes is `r accuracy.cm.ann`%. Kappa statistics shows `r kappa.cm.ann`. 
 
 ### VI. Comparing Accuracy
 The below tables show the accuracy of the above five methods:
@@ -521,7 +539,8 @@ kable(att.usage)
 ggplot(data = att.usage, aes(x = Variables, y = as.factor(Attribute_usage), fill = as.factor(Attribute_usage)))+
   geom_bar(stat="identity") +
   scale_y_discrete(name = "Attribute usage (%)")+
-  theme(axis.text.x = element_text(angle = 90), legend.position='none')
+  theme(axis.text.x = element_text(angle = 90), legend.position='none') +
+  ggtitle("Attribute Usage from Decision Tree Model")
 ```
 
             
