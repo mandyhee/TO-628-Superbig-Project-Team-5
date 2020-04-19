@@ -209,6 +209,57 @@ accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
 kappa.multinom <- round(as.numeric(cm.multinom$overall[2])*100, digits = 2)
 pred.table.multinom <- cm.multinom$table
 print(pred.table.multinom)
+#other models considered:
+#model-2
+#multinom_2<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum,data= train)
+
+#model-3
+#multinom_3<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum,data= train)
+
+
+#model-4
+#multinom_4<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+X_Minimum*LogOfAreas,data= train)
+
+#Model-5
+#multinom_5<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+X_Minimum*LogOfAreas+Steel_Plate_Thickness*LogOfAreas,data= train)
+
+#Model-6
+#multinom_6<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+X_Minimum*LogOfAreas+Steel_Plate_Thickness*LogOfAreas+Length_of_Conveyer*LogOfAreas,data= train)
+
+#Model-7
+#multinom_7<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index,data= train)
+
+
+#Model-8
+#multinom_8<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index,data= train)
+
+
+#Model-9
+#multinom_9<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+SigmoidOfAreas,data= train)
+
+#Model-10
+#multinom_10<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Empty_Index,data= train)
+
+#Model-11
+#multinom_11<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas,data= train)
+
+#Model-12
+#multinom_12<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index,data= train)
+
+#Model-13
+#multinom_13<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum,data= train)
+
+#Model-14
+#multinom_14<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+X_Minimum*X_Maximum,data= train)
+
+#Model-15
+#multinom_15<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+X_Minimum*X_Maximum+Y_Maximum,data= train)
+
+#Model-16
+#multinom_16<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+X_Minimum*X_Maximum+Y_Maximum+Pixels_Areas,data= train)
+
+#Model-17(Remove interaction +X_Minimum*X_Maximum)
+#multinom_17<-multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+Y_Maximum+Minimum_of_Luminosity,data= train)
 ```
 
 Results: Accuracy of using multinomial logistic regression is `r accuracy.multinom`%. Kappa statistics shows `r kappa.multinom`%. 
