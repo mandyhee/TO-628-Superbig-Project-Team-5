@@ -183,18 +183,28 @@ system.time({
   multinom_1<- multinom(relabel ~.,data= train)
 })
 # summary(multinom_1)
+#Model-18
+system.time({
+multinom_18 <- multinom(as.factor(relabel)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+Y_Maximum+Minimum_of_Luminosity+Y_Perimeter, data = train)
+})
+#summary(multinom_18) #AIC: 2196.181 
+
+#confusionMatrix(multinom_18_pred,fault_test$label)
+#  Accuracy : 0.7307
 
 # to get pvalues
-stargazer(multinom_1, type="text", out="multi1.txt")
+# stargazer(multinom_1, type="text", out="multi1.txt")
+stargazer(multinom_18, type="text", out="multi1.txt")
 
 # predict test result
-multinom_1_pred<-predict(multinom_1, test %>% select(-c(relabel)))
+# multinom_1_pred<-predict(multinom_1, test %>% select(-c(relabel)))
+multinom_18_pred<-predict(multinom_18,test %>% select(-c(relabel)))
 # CrossTable(multinom_1_pred, test$label)
 #Accuracy
 # sum(multinom_1_pred==fault_test$label)/nrow(fault_test)*100
 
 # confusion matrix
-cm.multinom <- confusionMatrix(multinom_1_pred, as.factor(test[, "relabel"]))
+cm.multinom <- confusionMatrix(multinom_18_pred, as.factor(test[, "relabel"]))
 accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
 kappa.multinom <- round(as.numeric(cm.multinom$overall[2])*100, digits = 2)
 pred.table.multinom <- cm.multinom$table
@@ -451,8 +461,16 @@ The seven types of steel faults that the team analyzed in this dataset are consi
 The decision tree model with boosting trials the team developed and selected to be the best among the models tested can provide useful business applications for manufacturers. This model will help the faults to be detected and identified as early as possible to help the manufacturers employ proper precautionary measures early on. In addition, "during manufacturing downtimes, most of the time spent is on localization of the fault rather than carrying out the actual remediation, as fault diagnosis is the most challenging phase of machine repairs." [3] The predictions of our model generated through machine learning techniques will be able to provide timely diagnosis for faults and help keep the manufacturers stay competitive by reducing machine downtimes, which in turn increase production speed and lower costs.        
 ```{r, echo = FALSE}
 att.usage <- data.frame(Variables = c("Length_of_Conveyer", "Steel_Plate_Thickness", "Outside_X_Index", "LogOfAreas", "Log_X_Index", "Orientation_Index", "Luminosity_Index", "Maximum_of_Luminosity", "Minimum_of_Luminosity", "X_Maximum", "Log_Y_Index", "SteelType", "Edges_Index", "Y_Minimum", "Empty_Index", "X_Minimum", "Square_Index", "Edges_Y_Index", "Sum_of_Luminosity", "Edges_X_Index", "Pixels_Areas", "X_Perimeter", "Y_Perimeter", "Y_Maximum"),
-                                      Attribute_usage = c("100%","100%","100%","100%","100%", "99.93%", "99.26%", "99.19%", "98.38%", "97.94%", "97.79%", "97.20%", "96.24%", "94.04%", "93.96%", "91.97%", "85.35%", "83.36%", "82.62%", "81.96%", "81.15%", "79.01%", "75.33%", "54.42%"))
+                                      Attribute_usage = c(100,100,100,100,100, 99.93, 99.26, 99.19, 98.38, 97.94, 97.79, 97.20, 96.24, 94.04, 93.96, 91.97, 85.35, 83.36, 82.62, 81.96, 81.15, 79.01, 75.33, 54.42))
+att.usage$Variables = factor(att.usage$Variables, levels = c("Length_of_Conveyer", "Steel_Plate_Thickness", "Outside_X_Index", "LogOfAreas", "Log_X_Index", "Orientation_Index", "Luminosity_Index", "Maximum_of_Luminosity", "Minimum_of_Luminosity", "X_Maximum", "Log_Y_Index", "SteelType", "Edges_Index", "Y_Minimum", "Empty_Index", "X_Minimum", "Square_Index", "Edges_Y_Index", "Sum_of_Luminosity", "Edges_X_Index", "Pixels_Areas", "X_Perimeter", "Y_Perimeter", "Y_Maximum"))
 kable(att.usage)
+```
+
+```{r, echo = FALSE}
+ggplot(data = att.usage, aes(x = Variables, y = as.factor(Attribute_usage), fill = as.factor(Attribute_usage)))+
+  geom_bar(stat="identity") +
+  scale_y_discrete(name = "Attribute usage (%)")+
+  theme(axis.text.x = element_text(angle = 90), legend.position='none')
 ```
 
             
