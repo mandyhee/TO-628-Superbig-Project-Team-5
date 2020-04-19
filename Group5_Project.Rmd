@@ -177,18 +177,28 @@ system.time({
   multinom_1<- multinom(as.factor(label) ~.,data= train %>% select(-c(label_num)))
 })
 # summary(multinom_1)
+#Model-18
+system.time({
+multinom_18<-multinom(as.factor(label)~Steel_Plate_Thickness+Outside_X_Index+LogOfAreas+Log_X_Index+Length_of_Conveyer+Maximum_of_Luminosity+Edges_Index+SteelType+Log_Y_Index+X_Minimum+Y_Minimum+Square_Index+Orientation_Index+Pixels_Areas+Luminosity_Index+X_Maximum+Y_Maximum+Minimum_of_Luminosity+Y_Perimeter,data= train %>% select(-c(label_num)))
+})
+summary(multinom_18) #AIC: 2196.181 
+
+#confusionMatrix(multinom_18_pred,fault_test$label)
+#  Accuracy : 0.7307
 
 # to get pvalues
 stargazer(multinom_1, type="text", out="multi1.txt")
+stargazer(multinom_18, type="text", out="multi1.txt")
 
 # predict test result
 multinom_1_pred<-predict(multinom_1, test %>% select(-c(label_num, label)))
+multinom_18_pred<-predict(multinom_18,test %>% select(-c(label_num, label)))
 # CrossTable(multinom_1_pred, test$label)
 #Accuracy
 # sum(multinom_1_pred==fault_test$label)/nrow(fault_test)*100
 
 # confusion matrix
-cm.multinom <- confusionMatrix(multinom_1_pred, as.factor(test[, "label"]))
+cm.multinom <- confusionMatrix(multinom_18_pred, as.factor(test[, "label"]))
 accuracy.multinom <- round(as.numeric(cm.multinom$overall[1])*100, digits = 2)
 pred.table.multinom <- cm.multinom$table
 print(pred.table.multinom)
